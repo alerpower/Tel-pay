@@ -86,16 +86,18 @@ def home():
 # ✅ Webhook route to receive Telegram updates
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    print("Webhook received")
     json_str = request.get_data().decode('UTF-8')
     print(f"Received webhook data: {json_str}")  # Debugging
+
     try:
         update = telebot.types.Update.de_json(json_str)
-        bot.process_new_updates([update])
+        print("Processing update...")  # Debugging
+        bot.process_new_updates([update])  # Ensure this properly processes the message
         return jsonify({"status": "ok"}), 200
     except Exception as e:
         print(f"Webhook processing error: {e}")  # Debugging
         return jsonify({"status": "error", "message": str(e)}), 500
+
 
 
 # ✅ Ensure webhook is set correctly when the server starts
