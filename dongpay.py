@@ -1,16 +1,17 @@
+import os
 import telebot
 from flask import Flask, request, jsonify
 import requests
 
 # Telegram bot setup
-API_TOKEN = '8064725015:AAFzO5kCMxLIBgoGIMqymWunTioRuiTw9U4'
+API_TOKEN = os.getenv('API_TOKEN')  # Use environment variable
 bot = telebot.TeleBot(API_TOKEN)
 
 # Flask setup
 app = Flask(__name__)
 
 TINPESA_API_URL = "https://api.tinypesa.com/api/v1/express/initialize/?username=Donga"
-TINPESA_API_KEY = "3k6NdpnrdvY3ES-akS64Lv78XE3rURRtSPUqfaqlqruBHAX2af"
+TINPESA_API_KEY = os.getenv('TINPESA_API_KEY')  # Use environment variable
 TINPESA_USERNAME = "Donga"
 ACCOUNT_NUMBER = "DONGALTD"
 
@@ -18,7 +19,11 @@ ACCOUNT_NUMBER = "DONGALTD"
 @bot.message_handler(commands=['start'])
 def start(message):
     print(f"Start command received from {message.chat.id}")  # Debugging
-    bot.send_message(message.chat.id, "Welcome! Please enter the amount you'd like to deposit (min 2000).")
+    try:
+        bot.send_message(message.chat.id, "Welcome! Please enter the amount you'd like to deposit (min 2000).")
+        print("Response sent to user")  # Debugging
+    except Exception as e:
+        print(f"Error sending message: {e}")  # Debugging
 
 # Command handler for /test
 @bot.message_handler(commands=['test'])
