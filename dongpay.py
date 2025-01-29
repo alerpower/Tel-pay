@@ -57,6 +57,10 @@ def handle_phone(message, amount):
         bot.send_message(message.chat.id, f"Error: {str(e)}")
 
 # Flask route to keep the bot running
+@app.route('/')
+def home():
+    return "Server is running!"  # Added for debugging
+
 @app.route('/webhook', methods=['POST'])
 def webhook():
     json_str = request.get_data().decode('UTF-8')
@@ -66,6 +70,11 @@ def webhook():
 
 
 if __name__ == '__main__':
+    # Remove any existing webhook
     bot.remove_webhook()
-    bot.set_webhook(url="https://tel-pay.onrender.com/webhook")  # Set your server URL
+    
+    # Set your webhook URL
+    bot.set_webhook(url="https://tel-pay.onrender.com/webhook")  # Ensure this URL is correct and accessible by Telegram
+    
+    # Start the Flask server
     app.run(debug=True, host="0.0.0.0", port=5000)
