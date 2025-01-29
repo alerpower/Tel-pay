@@ -10,10 +10,8 @@ TINPESA_USERNAME = "Donga"
 ACCOUNT_NUMBER = "DONGALTD"
 
 # Validate API credentials
-if not API_TOKEN:
-    raise ValueError("API_TOKEN is missing! Set it as an environment variable.")
-if not TINPESA_API_KEY:
-    raise ValueError("TINPESA_API_KEY is missing! Set it as an environment variable.")
+if not API_TOKEN or not TINPESA_API_KEY:
+    raise ValueError("API_TOKEN or TINPESA_API_KEY is missing! Set them in environment variables.")
 
 # Initialize Telegram bot
 bot = telebot.TeleBot(API_TOKEN)
@@ -92,18 +90,24 @@ def webhook():
     print("Received webhook data:", json_str)  # Debugging
     
     try:
+        if not json_str:
+            return jsonify({"status": "error", "message": "Empty request body"}), 400
+
         update = telebot.types.Update.de_json(json_str)
+        if not hasattr(update, "message"):
+            return jsonify({"status": "error", "message": "Invalid update format"}), 400
+
         bot.process_new_updates([update])
         return jsonify({"status": "ok"}), 200
     except Exception as e:
         print(f"Webhook processing error: {e}")  # Debugging
         return jsonify({"status": "error", "message": str(e)}), 500
-        
+
+# ✅ Ensure webhook is set correctly when the server starts
+bot.remove_webhook()
+bot.set_webhook(url="https://tel-pay.onrender.com/webhook")
+
+# ✅ Fix Render hosting issues
 if __name__ == '__main__':
-    bot.remove_webhook()
-    bot.set_webhook(url="https://tel-pay.onrender.com/webhook")
-    
-    # Fix Render hosting issues: Remove debug=True and use port from environment
     port = int(os.environ.get("PORT", 10000))  # Render assigns a dynamic port
     app.run(host="0.0.0.0", port=port)
-
