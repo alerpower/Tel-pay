@@ -98,18 +98,12 @@ def webhook():
     except Exception as e:
         print(f"Webhook processing error: {e}")  # Debugging
         return jsonify({"status": "error", "message": str(e)}), 500
-
+        
 if __name__ == '__main__':
-    # Get the correct port from Render
-    PORT = int(os.getenv("PORT", 5000))
-
-    # Remove any existing webhook (avoid conflicts)
     bot.remove_webhook()
+    bot.set_webhook(url="https://tel-pay.onrender.com/webhook")
     
-    # Set webhook only if running on Render
-    WEBHOOK_URL = "https://tel-pay.onrender.com/webhook"
-    bot.set_webhook(url=WEBHOOK_URL)
-    print(f"Webhook set to: {WEBHOOK_URL}")  # Debugging
+    # Fix Render hosting issues: Remove debug=True and use port from environment
+    port = int(os.environ.get("PORT", 10000))  # Render assigns a dynamic port
+    app.run(host="0.0.0.0", port=port)
 
-    # Start the Flask server
-    app.run(debug=True, host="0.0.0.0", port=PORT)
