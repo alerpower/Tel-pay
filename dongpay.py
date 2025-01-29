@@ -67,5 +67,5 @@ def webhook():
 
 if __name__ == '__main__':
     bot.remove_webhook()
-    bot.set_webhook(url="https://yourserver.com/webhook")  # Set your server URL
+    bot.set_webhook(url="https://tel-pay.onrender.com/webhook")  # Set your server URL
     app.run(debug=True, host="0.0.0.0", port=5000)
