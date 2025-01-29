@@ -27,9 +27,11 @@ TINPESA_API_URL = "https://api.tinypesa.com/api/v1/express/initialize/?username=
 def start(message):
     chat_id = message.chat.id
     try:
+        print(f"Handling /start command from {chat_id}")  # More detailed logging
         bot.send_message(chat_id, "Hello! This is a test message.")  # Simple test response
+        print(f"Sent test message to {chat_id}")  # Logging after sending the message
     except Exception as e:
-        print(f"Error sending message: {e}")
+        print(f"Error sending message to {chat_id}: {e}")  # Catch any errors and log them
 
 # ✅ /test command
 @bot.message_handler(commands=['test'])
@@ -91,8 +93,9 @@ def webhook():
         update = telebot.types.Update.de_json(json_str)
         # Only process message updates here
         if update.message:
-            print(f"Message received: {update.message.text}")
-            bot.process_new_updates([update])
+            print(f"Message received: {update.message.text}")  # Debugging message text
+            bot.process_new_updates([update])  # Ensure this processes the update correctly
+            print(f"Processed message: {update.message.text}")  # Log after processing
         return jsonify({"status": "ok"}), 200
     except Exception as e:
         print(f"Webhook processing error: {e}")
