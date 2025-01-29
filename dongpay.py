@@ -1,7 +1,7 @@
 import os
-import telebot
-from flask import Flask, request, jsonify
 import requests
+from flask import Flask, request, jsonify
+import telebot
 
 # Load API credentials from environment variables
 API_TOKEN = os.getenv('API_TOKEN')
@@ -26,23 +26,15 @@ TINPESA_API_URL = "https://api.tinypesa.com/api/v1/express/initialize/?username=
 @bot.message_handler(commands=['start'])
 def start(message):
     chat_id = message.chat.id
-    print(f"Start command received from {chat_id}")  # Debugging
     try:
         bot.send_message(chat_id, "Hello! This is a test message.")  # Simple test response
     except Exception as e:
         print(f"Error sending message: {e}")
 
-#@bot.message_handler(commands=['start'])
-#def start(message):
-    #chat_id = message.chat.id
-    #print(f"Start command received from {chat_id}")  # Debugging
-    #bot.send_message(chat_id, "Welcome! Please enter the amount you'd like to deposit (min 2000).")
-
 # ✅ /test command
 @bot.message_handler(commands=['test'])
 def test(message):
     chat_id = message.chat.id
-    print(f"Test command received from {chat_id}")  # Debugging
     bot.send_message(chat_id, "Test message received!")
 
 # ✅ Handle deposit amount
@@ -61,8 +53,6 @@ def handle_amount(message):
 def handle_phone(message, amount):
     chat_id = message.chat.id
     phone = message.text.strip()
-
-    print(f"Phone number received from {chat_id}: {phone}")  # Debugging
 
     payload = {
         "amount": amount,
@@ -96,24 +86,17 @@ def home():
 @app.route('/webhook', methods=['POST'])
 def webhook():
     json_str = request.get_data().decode('UTF-8')
-    print(f"Received webhook data: {json_str}")  # Debugging
 
     try:
         update = telebot.types.Update.de_json(json_str)
-        print("Processing update...")  # Debugging
-
-        # Check if the update contains a valid message
+        # Only process message updates here
         if update.message:
-            print(f"Message received: {update.message.text}")  # Debugging
-
-        bot.process_new_updates([update])  # Ensure this processes the update correctly
+            print(f"Message received: {update.message.text}")
+            bot.process_new_updates([update])
         return jsonify({"status": "ok"}), 200
     except Exception as e:
-        print(f"Webhook processing error: {e}")  # Debugging
+        print(f"Webhook processing error: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
-
-
-
 
 # ✅ Ensure webhook is set correctly when the server starts
 bot.remove_webhook()
@@ -121,7 +104,5 @@ bot.set_webhook(url="https://tel-pay.onrender.com/webhook")
 
 # ✅ Fix Render hosting issues
 if __name__ == '__main__':
-    # Remove debug=True in production
     port = int(os.environ.get("PORT", 5000))  # Use Gunicorn or set a correct port
     app.run(host="0.0.0.0", port=port)
-
