@@ -3,51 +3,60 @@ import telebot
 from flask import Flask, request, jsonify
 import requests
 
-# Telegram bot setup
-API_TOKEN = os.getenv('API_TOKEN')  # Use environment variable
-bot = telebot.TeleBot(API_TOKEN)
-
-# Flask setup
-app = Flask(__name__)
-
-TINPESA_API_URL = "https://api.tinypesa.com/api/v1/express/initialize/?username=Donga"
-TINPESA_API_KEY = os.getenv('TINPESA_API_KEY')  # Use environment variable
+# Load API credentials from environment variables
+API_TOKEN = os.getenv('API_TOKEN')
+TINPESA_API_KEY = os.getenv('TINPESA_API_KEY')
 TINPESA_USERNAME = "Donga"
 ACCOUNT_NUMBER = "DONGALTD"
 
-# Command handler for /start
+# Validate API credentials
+if not API_TOKEN:
+    raise ValueError("API_TOKEN is missing! Set it as an environment variable.")
+if not TINPESA_API_KEY:
+    raise ValueError("TINPESA_API_KEY is missing! Set it as an environment variable.")
+
+# Initialize Telegram bot
+bot = telebot.TeleBot(API_TOKEN)
+
+# Initialize Flask app
+app = Flask(__name__)
+
+# TinPesa API URL
+TINPESA_API_URL = "https://api.tinypesa.com/api/v1/express/initialize/?username=Donga"
+
+# ✅ /start command
 @bot.message_handler(commands=['start'])
 def start(message):
-    print(f"Start command received from {message.chat.id}")  # Debugging
-    try:
-        bot.send_message(message.chat.id, "Welcome! Please enter the amount you'd like to deposit (min 2000).")
-        print("Response sent to user")  # Debugging
-    except Exception as e:
-        print(f"Error sending message: {e}")  # Debugging
+    chat_id = message.chat.id
+    print(f"Start command received from {chat_id}")  # Debugging
+    bot.send_message(chat_id, "Welcome! Please enter the amount you'd like to deposit (min 2000).")
 
-# Command handler for /test
+# ✅ /test command
 @bot.message_handler(commands=['test'])
 def test(message):
-    print(f"Test command received from {message.chat.id}")  # Debugging
-    bot.send_message(message.chat.id, "Test message received!")
+    chat_id = message.chat.id
+    print(f"Test command received from {chat_id}")  # Debugging
+    bot.send_message(chat_id, "Test message received!")
 
-@bot.message_handler(func=lambda message: True)
-def handle_message(message):
-    print(f"Handling message from {message.chat.id}: {message.text}")  # Debugging
-    try:
-        amount = int(message.text)
-        if amount < 2000:
-            bot.send_message(message.chat.id, "The minimum deposit amount is 2000. Please enter a valid amount.")
-        else:
-            bot.send_message(message.chat.id, f"Amount: {amount}. Please enter your phone number.")
-            bot.register_next_step_handler(message, handle_phone, amount)
-    except ValueError:
-        bot.send_message(message.chat.id, "Please enter a valid amount.")
+# ✅ Handle deposit amount
+@bot.message_handler(func=lambda message: message.text.isdigit())
+def handle_amount(message):
+    chat_id = message.chat.id
+    amount = int(message.text)
 
+    if amount < 2000:
+        bot.send_message(chat_id, "The minimum deposit amount is 2000. Please enter a valid amount.")
+    else:
+        bot.send_message(chat_id, f"Amount: {amount}. Please enter your phone number.")
+        bot.register_next_step_handler(message, handle_phone, amount)
+
+# ✅ Handle phone number and initiate TinPesa STK push
 def handle_phone(message, amount):
-    phone = message.text
-    print(f"Phone number received: {phone}")  # Debugging
-    # Make the API call to initiate the STK Push
+    chat_id = message.chat.id
+    phone = message.text.strip()
+
+    print(f"Phone number received from {chat_id}: {phone}")  # Debugging
+
     payload = {
         "amount": amount,
         "msisdn": phone,
@@ -58,38 +67,49 @@ def handle_phone(message, amount):
         "Content-Type": "application/json",
         "Apikey": TINPESA_API_KEY
     }
-    
+
     try:
         response = requests.post(TINPESA_API_URL, json=payload, headers=headers)
         response_data = response.json()
-        
-        if response.status_code == 200 and response_data.get("success"):
-            bot.send_message(message.chat.id, "Mpesa Popup sent successfully! Please enter your PIN to complete the transaction.")
-        else:
-            bot.send_message(message.chat.id, f"Error: {response_data.get('message', 'Failed to initiate STK Push.')}")
-    except Exception as e:
-        bot.send_message(message.chat.id, f"Error: {str(e)}")
 
-# Flask route to keep the bot running
+        if response.status_code == 200 and response_data.get("success"):
+            bot.send_message(chat_id, "Mpesa Popup sent successfully! Please enter your PIN to complete the transaction.")
+        else:
+            bot.send_message(chat_id, f"Error: {response_data.get('message', 'Failed to initiate STK Push.')}")
+    
+    except Exception as e:
+        bot.send_message(chat_id, f"Error: {str(e)}")
+
+# ✅ Flask route for health check
 @app.route('/')
 def home():
-    return "Server is running!"  # Added for debugging
+    return "Server is running!", 200
 
+# ✅ Webhook route to receive Telegram updates
 @app.route('/webhook', methods=['POST'])
 def webhook():
     json_str = request.get_data().decode('UTF-8')
-    print("Received webhook data:", json_str)  # Log webhook data for debugging
-    update = telebot.types.Update.de_json(json_str)
-    print(f"Update processed: {update}")  # Debugging to check the processed update
-    bot.process_new_updates([update])
-    return jsonify({"status": "ok"})
+    print("Received webhook data:", json_str)  # Debugging
+    
+    try:
+        update = telebot.types.Update.de_json(json_str)
+        bot.process_new_updates([update])
+        return jsonify({"status": "ok"}), 200
+    except Exception as e:
+        print(f"Webhook processing error: {e}")  # Debugging
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == '__main__':
-    # Remove any existing webhook
+    # Get the correct port from Render
+    PORT = int(os.getenv("PORT", 5000))
+
+    # Remove any existing webhook (avoid conflicts)
     bot.remove_webhook()
     
-    # Set your webhook URL
-    bot.set_webhook(url="https://tel-pay.onrender.com/webhook")  # Ensure this URL is correct and accessible by Telegram
-    
+    # Set webhook only if running on Render
+    WEBHOOK_URL = "https://tel-pay.onrender.com/webhook"
+    bot.set_webhook(url=WEBHOOK_URL)
+    print(f"Webhook set to: {WEBHOOK_URL}")  # Debugging
+
     # Start the Flask server
-    app.run(debug=True, host="0.0.0.0", port=10000)
+    app.run(debug=True, host="0.0.0.0", port=PORT)
