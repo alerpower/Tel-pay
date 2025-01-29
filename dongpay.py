@@ -87,4 +87,4 @@ if __name__ == '__main__':
     bot.set_webhook(url="https://tel-pay.onrender.com/webhook")  # Ensure this URL is correct and accessible by Telegram
     
     # Start the Flask server
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    app.run(debug=True, host="0.0.0.0", port=10000)
