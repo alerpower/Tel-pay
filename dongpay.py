@@ -27,7 +27,16 @@ TINPESA_API_URL = "https://api.tinypesa.com/api/v1/express/initialize/?username=
 def start(message):
     chat_id = message.chat.id
     print(f"Start command received from {chat_id}")  # Debugging
-    bot.send_message(chat_id, "Welcome! Please enter the amount you'd like to deposit (min 2000).")
+    try:
+        bot.send_message(chat_id, "Hello! This is a test message.")  # Simple test response
+    except Exception as e:
+        print(f"Error sending message: {e}")
+
+#@bot.message_handler(commands=['start'])
+#def start(message):
+    #chat_id = message.chat.id
+    #print(f"Start command received from {chat_id}")  # Debugging
+    #bot.send_message(chat_id, "Welcome! Please enter the amount you'd like to deposit (min 2000).")
 
 # ✅ /test command
 @bot.message_handler(commands=['test'])
@@ -112,5 +121,7 @@ bot.set_webhook(url="https://tel-pay.onrender.com/webhook")
 
 # ✅ Fix Render hosting issues
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 10000))  # Render assigns a dynamic port
+    # Remove debug=True in production
+    port = int(os.environ.get("PORT", 5000))  # Use Gunicorn or set a correct port
     app.run(host="0.0.0.0", port=port)
+
