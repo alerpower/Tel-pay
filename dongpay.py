@@ -64,6 +64,7 @@ def home():
 @app.route('/webhook', methods=['POST'])
 def webhook():
     json_str = request.get_data().decode('UTF-8')
+    print("Received webhook data:", json_str)  # Log webhook data for debugging
     update = telebot.types.Update.de_json(json_str)
     bot.process_new_updates([update])
     return jsonify({"status": "ok"})
