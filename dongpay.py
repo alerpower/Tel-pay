@@ -14,11 +14,17 @@ TINPESA_API_KEY = "3k6NdpnrdvY3ES-akS64Lv78XE3rURRtSPUqfaqlqruBHAX2af"
 TINPESA_USERNAME = "Donga"
 ACCOUNT_NUMBER = "DONGALTD"
 
-# Command handler
+# Command handler for /start
 @bot.message_handler(commands=['start'])
 def start(message):
     print(f"Start command received from {message.chat.id}")  # Debugging
     bot.send_message(message.chat.id, "Welcome! Please enter the amount you'd like to deposit (min 2000).")
+
+# Command handler for /test
+@bot.message_handler(commands=['test'])
+def test(message):
+    print(f"Test command received from {message.chat.id}")  # Debugging
+    bot.send_message(message.chat.id, "Test message received!")
 
 @bot.message_handler(func=lambda message: True)
 def handle_message(message):
