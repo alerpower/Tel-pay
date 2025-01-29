@@ -92,11 +92,17 @@ def webhook():
     try:
         update = telebot.types.Update.de_json(json_str)
         print("Processing update...")  # Debugging
-        bot.process_new_updates([update])  # Ensure this properly processes the message
+
+        # Check if the update contains a valid message
+        if update.message:
+            print(f"Message received: {update.message.text}")  # Debugging
+
+        bot.process_new_updates([update])  # Ensure this processes the update correctly
         return jsonify({"status": "ok"}), 200
     except Exception as e:
         print(f"Webhook processing error: {e}")  # Debugging
         return jsonify({"status": "error", "message": str(e)}), 500
+
 
 
 
