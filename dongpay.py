@@ -17,10 +17,12 @@ ACCOUNT_NUMBER = "DONGALTD"
 # Command handler
 @bot.message_handler(commands=['start'])
 def start(message):
+    print(f"Start command received from {message.chat.id}")  # Debugging
     bot.send_message(message.chat.id, "Welcome! Please enter the amount you'd like to deposit (min 2000).")
 
 @bot.message_handler(func=lambda message: True)
 def handle_message(message):
+    print(f"Handling message from {message.chat.id}: {message.text}")  # Debugging
     try:
         amount = int(message.text)
         if amount < 2000:
@@ -33,6 +35,7 @@ def handle_message(message):
 
 def handle_phone(message, amount):
     phone = message.text
+    print(f"Phone number received: {phone}")  # Debugging
     # Make the API call to initiate the STK Push
     payload = {
         "amount": amount,
@@ -66,9 +69,9 @@ def webhook():
     json_str = request.get_data().decode('UTF-8')
     print("Received webhook data:", json_str)  # Log webhook data for debugging
     update = telebot.types.Update.de_json(json_str)
+    print(f"Update processed: {update}")  # Debugging to check the processed update
     bot.process_new_updates([update])
     return jsonify({"status": "ok"})
-
 
 if __name__ == '__main__':
     # Remove any existing webhook
