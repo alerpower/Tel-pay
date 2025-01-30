@@ -1,7 +1,7 @@
 import os
 import telebot
 import requests
-import time  # Added for delay before polling
+import time
 from flask import Flask, request, jsonify
 
 # Initialize Flask app
@@ -23,41 +23,50 @@ bot = telebot.TeleBot(API_TOKEN)
 # TinPesa API URL
 TINPESA_API_URL = "https://api.tinypesa.com/api/v1/express/initialize/?username=Donga"
 
+# Track user states (we'll use chat_id as the key)
+user_state = {}
+
+# Define states
+WAITING_FOR_AMOUNT = 1
+WAITING_FOR_PHONE = 2
+
 # ✅ /start command
 @bot.message_handler(commands=['start'])
 def start(message):
     chat_id = message.chat.id
+    user_state[chat_id] = WAITING_FOR_AMOUNT  # Set the state to waiting for amount
     print(f"Start command received from {chat_id}")  # Debugging
     bot.send_message(chat_id, "Welcome! Please enter the amount you'd like to deposit (min 2000).")
-
-# ✅ /test command
-@bot.message_handler(commands=['test'])
-def test(message):
-    chat_id = message.chat.id
-    print(f"Test command received from {chat_id}")  # Debugging
-    bot.send_message(chat_id, "Test message received!")
 
 # ✅ Handle deposit amount
 @bot.message_handler(func=lambda message: message.text.isdigit())
 def handle_amount(message):
     chat_id = message.chat.id
+    if chat_id not in user_state or user_state[chat_id] != WAITING_FOR_AMOUNT:
+        return  # Ignore if we're not expecting an amount
+
     amount = int(message.text)
 
     if amount < 2000:
         bot.send_message(chat_id, "The minimum deposit amount is 2000. Please enter a valid amount.")
     else:
         bot.send_message(chat_id, f"Amount: {amount}. Please enter your phone number.")
+        user_state[chat_id] = WAITING_FOR_PHONE  # Update state to waiting for phone
         bot.register_next_step_handler(message, handle_phone, amount)
 
 # ✅ Validate and process phone number for STK Push
 def handle_phone(message, amount):
     chat_id = message.chat.id
+    if chat_id not in user_state or user_state[chat_id] != WAITING_FOR_PHONE:
+        return  # Ignore if we're not expecting a phone number
+
     phone = message.text.strip()
 
     # Ensure phone number is 10 digits and starts with 07
     if not phone.isdigit() or len(phone) != 10 or not phone.startswith("07"):
         bot.send_message(chat_id, "Invalid phone number. Please enter a valid Safaricom number (e.g., 0712345678).")
-        return
+        user_state[chat_id] = WAITING_FOR_PHONE  # Stay in waiting for phone state
+        return  # Prompt again for phone number
 
     print(f"Phone number received from {chat_id}: {phone}")  # Debugging
 
