@@ -78,4 +78,6 @@ def handle_phone(message, amount):
 # ✅ Start bot using polling
 if __name__ == '__main__':
     print("Bot is running using polling...")
-    bot.polling(none_stop=True)
+    bot.remove_webhook()  # 🚀 Remove webhook first
+    bot.polling(none_stop=True)  # Then start polling
+
