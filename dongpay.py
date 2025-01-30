@@ -2,9 +2,9 @@ import os
 import telebot
 import requests
 import time
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify
 
-# Initialize Flask app
+# Initialize Flask app (only for health check)
 app = Flask(__name__)
 
 # Load API credentials from environment variables
