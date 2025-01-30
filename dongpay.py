@@ -1,7 +1,6 @@
 import os
 import telebot
 import requests
-import time  # Added for delay before polling
 from flask import Flask, request, jsonify
 
 # Load API credentials from environment variables
@@ -13,6 +12,9 @@ ACCOUNT_NUMBER = "DONGALTD"
 # Validate API credentials
 if not API_TOKEN or not TINPESA_API_KEY:
     raise ValueError("API_TOKEN or TINPESA_API_KEY is missing! Set them in environment variables.")
+
+# Initialize Flask app
+app = Flask(__name__)
 
 # Initialize Telegram bot
 bot = telebot.TeleBot(API_TOKEN)
@@ -81,9 +83,22 @@ def handle_phone(message, amount):
     except Exception as e:
         bot.send_message(chat_id, f"⚠️ Error: {str(e)}")
 
-# ✅ Start bot using polling
+# Flask route to handle webhook
+@app.route('/' + API_TOKEN, methods=['POST'])
+def webhook():
+    json_str = request.get_data().decode('UTF-8')
+    update = telebot.types.Update.de_json(json_str)
+    bot.process_new_updates([update])
+    return '', 200
+
+# Set webhook with Render's URL
+@app.route('/set_webhook', methods=['GET'])
+def set_webhook():
+    url = f"https://{request.host}/{API_TOKEN}"
+    bot.remove_webhook()  # Clean up any existing webhook
+    bot.set_webhook(url=url)  # Set new webhook
+    return jsonify({"status": "Webhook set successfully!"}), 200
+
+# Start Flask app
 if __name__ == '__main__':
-    print("🚀 Bot is running using polling...")
-    bot.remove_webhook()  # ✅ Remove webhook first
-    time.sleep(1)  # ✅ Give time for Telegram to unregister webhook
-    bot.polling(none_stop=True)  # ✅ Start polling
+    app.run(host="0.0.0.0", port=10000)
