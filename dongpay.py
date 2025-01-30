@@ -87,7 +87,7 @@ def handle_phone(message, amount):
         response_data = response.json()
 
         if response.status_code == 200 and response_data.get("success"):
-            bot.send_message(chat_id, "✅ Mpesa Popup sent successfully! Please enter your PIN to complete the transaction.")
+            bot.send_message(chat_id, "✅ Mpesa Popup sent successfully! Please enter your PIN to complete the transaction. log back  to https://dongabet.66ghz.com if completed to refresh you balance")
         else:
             bot.send_message(chat_id, f"❌ Error: {response_data.get('message', 'Failed to initiate STK Push.')}")
     
