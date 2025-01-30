@@ -1,7 +1,7 @@
 import os
+import telebot
 import requests
 from flask import Flask, request, jsonify
-import telebot
 
 # Load API credentials from environment variables
 API_TOKEN = os.getenv('API_TOKEN')
@@ -16,9 +16,6 @@ if not API_TOKEN or not TINPESA_API_KEY:
 # Initialize Telegram bot
 bot = telebot.TeleBot(API_TOKEN)
 
-# Initialize Flask app
-app = Flask(__name__)
-
 # TinPesa API URL
 TINPESA_API_URL = "https://api.tinypesa.com/api/v1/express/initialize/?username=Donga"
 
@@ -26,17 +23,14 @@ TINPESA_API_URL = "https://api.tinypesa.com/api/v1/express/initialize/?username=
 @bot.message_handler(commands=['start'])
 def start(message):
     chat_id = message.chat.id
-    try:
-        print(f"Handling /start command from {chat_id}")  # More detailed logging
-        bot.send_message(chat_id, "Hello! This is a test message.")  # Simple test response
-        print(f"Sent test message to {chat_id}")  # Logging after sending the message
-    except Exception as e:
-        print(f"Error sending message to {chat_id}: {e}")  # Catch any errors and log them
+    print(f"Start command received from {chat_id}")  # Debugging
+    bot.send_message(chat_id, "Welcome! Please enter the amount you'd like to deposit (min 2000).")
 
 # ✅ /test command
 @bot.message_handler(commands=['test'])
 def test(message):
     chat_id = message.chat.id
+    print(f"Test command received from {chat_id}")  # Debugging
     bot.send_message(chat_id, "Test message received!")
 
 # ✅ Handle deposit amount
@@ -55,6 +49,8 @@ def handle_amount(message):
 def handle_phone(message, amount):
     chat_id = message.chat.id
     phone = message.text.strip()
+
+    print(f"Phone number received from {chat_id}: {phone}")  # Debugging
 
     payload = {
         "amount": amount,
@@ -79,33 +75,7 @@ def handle_phone(message, amount):
     except Exception as e:
         bot.send_message(chat_id, f"Error: {str(e)}")
 
-# ✅ Flask route for health check
-@app.route('/')
-def home():
-    return "Server is running!", 200
-
-# ✅ Webhook route to receive Telegram updates
-@app.route('/webhook', methods=['POST'])
-def webhook():
-    json_str = request.get_data().decode('UTF-8')
-
-    try:
-        update = telebot.types.Update.de_json(json_str)
-        # Only process message updates here
-        if update.message:
-            print(f"Message received: {update.message.text}")  # Debugging message text
-            bot.process_new_updates([update])  # Ensure this processes the update correctly
-            print(f"Processed message: {update.message.text}")  # Log after processing
-        return jsonify({"status": "ok"}), 200
-    except Exception as e:
-        print(f"Webhook processing error: {e}")
-        return jsonify({"status": "error", "message": str(e)}), 500
-
-# ✅ Ensure webhook is set correctly when the server starts
-bot.remove_webhook()
-bot.set_webhook(url="https://tel-pay.onrender.com/webhook")
-
-# ✅ Fix Render hosting issues
+# ✅ Start bot using polling
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))  # Use Gunicorn or set a correct port
-    app.run(host="0.0.0.0", port=port)
+    print("Bot is running using polling...")
+    bot.polling(none_stop=True)
