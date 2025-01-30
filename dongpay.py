@@ -1,6 +1,7 @@
 import os
 import telebot
 import requests
+import time  # Added for delay before polling
 from flask import Flask, request, jsonify
 
 # Load API credentials from environment variables
@@ -12,9 +13,6 @@ ACCOUNT_NUMBER = "DONGALTD"
 # Validate API credentials
 if not API_TOKEN or not TINPESA_API_KEY:
     raise ValueError("API_TOKEN or TINPESA_API_KEY is missing! Set them in environment variables.")
-
-# Initialize Flask app
-app = Flask(__name__)
 
 # Initialize Telegram bot
 bot = telebot.TeleBot(API_TOKEN)
@@ -83,35 +81,9 @@ def handle_phone(message, amount):
     except Exception as e:
         bot.send_message(chat_id, f"⚠️ Error: {str(e)}")
 
-# Flask route to handle webhook
-@app.route('/' + API_TOKEN, methods=['POST'])
-def webhook():
-    json_str = request.get_data().decode('UTF-8')
-    print(f"Webhook received: {json_str}")  # Debugging
-    update = telebot.types.Update.de_json(json_str)
-    bot.process_new_updates([update])
-    return '', 200
-
-
-# Set webhook with Render's URL
-@app.route('/set_webhook', methods=['GET'])
-def set_webhook():
-    try:
-        print(f"Loaded API Token: {API_TOKEN}")  # Debugging step
-        if not API_TOKEN:
-            return jsonify({"error": "API_TOKEN is missing!"}), 500
-
-        url = f"https://dongbet.onrender.com/{API_TOKEN}"
-        bot.remove_webhook()  # Clean up any existing webhook
-        success = bot.set_webhook(url=url)  # Set new webhook
-        return jsonify({"status": "Webhook set successfully!", "success": success, "webhook_url": url}), 200
-    except Exception as e:
-        print(f"Error setting webhook: {e}")  # Log error to Render logs
-        return jsonify({"error": str(e)}), 500
-
-
-
-# Start Flask app
+# ✅ Start bot using polling
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=10000, debug=True)
-
+    print("🚀 Bot is running using polling...")
+    bot.remove_webhook()  # ✅ Remove webhook first
+    time.sleep(1)  # ✅ Give time for Telegram to unregister webhook
+    bot.polling(none_stop=True)  # ✅ Start polling
