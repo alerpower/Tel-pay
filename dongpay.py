@@ -87,9 +87,11 @@ def handle_phone(message, amount):
 @app.route('/' + API_TOKEN, methods=['POST'])
 def webhook():
     json_str = request.get_data().decode('UTF-8')
+    print(f"Webhook received: {json_str}")  # Debugging
     update = telebot.types.Update.de_json(json_str)
     bot.process_new_updates([update])
     return '', 200
+
 
 # Set webhook with Render's URL
 @app.route('/set_webhook', methods=['GET'])
