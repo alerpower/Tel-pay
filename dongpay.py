@@ -92,13 +92,17 @@ def webhook():
     return '', 200
 
 # Set webhook with Render's URL
-# Set webhook with Render's live URL
 @app.route('/set_webhook', methods=['GET'])
 def set_webhook():
-    url = f"https://dongbet.onrender.com/{API_TOKEN}"  # Use your live Render URL
-    bot.remove_webhook()  # Clean up any existing webhook
-    bot.set_webhook(url=url)  # Set new webhook
-    return jsonify({"status": "Webhook set successfully!", "webhook_url": url}), 200
+    try:
+        url = f"https://dongbet.onrender.com/{API_TOKEN}"
+        bot.remove_webhook()  # Clean up any existing webhook
+        success = bot.set_webhook(url=url)  # Set new webhook
+        return jsonify({"status": "Webhook set successfully!", "success": success, "webhook_url": url}), 200
+    except Exception as e:
+        print(f"Error setting webhook: {e}")  # Log error to Render logs
+        return jsonify({"error": str(e)}), 500
+
 
 
 # Start Flask app
