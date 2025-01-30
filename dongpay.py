@@ -4,6 +4,9 @@ import requests
 import time  # Added for delay before polling
 from flask import Flask, request, jsonify
 
+# Initialize Flask app
+app = Flask(__name__)
+
 # Load API credentials from environment variables
 API_TOKEN = os.getenv('API_TOKEN')
 TINPESA_API_KEY = os.getenv('TINPESA_API_KEY')
@@ -81,9 +84,23 @@ def handle_phone(message, amount):
     except Exception as e:
         bot.send_message(chat_id, f"⚠️ Error: {str(e)}")
 
-# ✅ Start bot using polling
-if __name__ == '__main__':
+# ✅ Flask route for health check
+@app.route('/')
+def index():
+    return jsonify({"status": "Bot is running!"})
+
+# ✅ Start bot using polling (for development purposes)
+def start_polling():
     print("🚀 Bot is running using polling...")
     bot.remove_webhook()  # ✅ Remove webhook first
     time.sleep(1)  # ✅ Give time for Telegram to unregister webhook
     bot.polling(none_stop=True)  # ✅ Start polling
+
+# ✅ Start bot in a separate thread
+from threading import Thread
+thread = Thread(target=start_polling)
+thread.start()
+
+# ✅ Start Flask app
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=10000)
