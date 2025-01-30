@@ -95,6 +95,10 @@ def webhook():
 @app.route('/set_webhook', methods=['GET'])
 def set_webhook():
     try:
+        print(f"Loaded API Token: {API_TOKEN}")  # Debugging step
+        if not API_TOKEN:
+            return jsonify({"error": "API_TOKEN is missing!"}), 500
+
         url = f"https://dongbet.onrender.com/{API_TOKEN}"
         bot.remove_webhook()  # Clean up any existing webhook
         success = bot.set_webhook(url=url)  # Set new webhook
