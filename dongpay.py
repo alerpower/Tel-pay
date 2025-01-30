@@ -66,6 +66,7 @@ def handle_phone(message, amount):
     if not phone.isdigit() or len(phone) != 10 or not phone.startswith("07"):
         bot.send_message(chat_id, "Invalid phone number. Please enter a valid Safaricom number (e.g., 0712345678).")
         user_state[chat_id] = WAITING_FOR_PHONE  # Stay in waiting for phone state
+        bot.register_next_step_handler(message, handle_phone, amount)  # Continue asking for phone number
         return  # Prompt again for phone number
 
     print(f"Phone number received from {chat_id}: {phone}")  # Debugging
@@ -92,6 +93,23 @@ def handle_phone(message, amount):
     
     except Exception as e:
         bot.send_message(chat_id, f"⚠️ Error: {str(e)}")
+
+# ✅ Handle unrecognized input and provide the correct message
+@bot.message_handler(func=lambda message: True)
+def handle_unrecognized_input(message):
+    chat_id = message.chat.id
+    unrecognized_message = message.text.lower()
+
+    # If the user sends anything that's not recognized, tell them to type /start
+    bot.send_message(chat_id, (
+        "Sorry, I don't recognize that command. "
+        "Please type /start to begin the deposit process. "
+        "This bot is only for depositing money, nothing else.\n"
+        "If you need help with something else, try @DongbetBot."
+    ))
+
+    # Reset the state to make sure they go back to /start process
+    user_state[chat_id] = WAITING_FOR_AMOUNT
 
 # ✅ Flask route for health check
 @app.route('/')
