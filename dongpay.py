@@ -1,6 +1,7 @@
 import os
 import telebot
 import requests
+import time  # Added for delay before polling
 from flask import Flask, request, jsonify
 
 # Load API credentials from environment variables
@@ -45,10 +46,15 @@ def handle_amount(message):
         bot.send_message(chat_id, f"Amount: {amount}. Please enter your phone number.")
         bot.register_next_step_handler(message, handle_phone, amount)
 
-# ✅ Handle phone number and initiate TinPesa STK push
+# ✅ Validate and process phone number for STK Push
 def handle_phone(message, amount):
     chat_id = message.chat.id
     phone = message.text.strip()
+
+    # Ensure phone number is 10 digits and starts with 07
+    if not phone.isdigit() or len(phone) != 10 or not phone.startswith("07"):
+        bot.send_message(chat_id, "Invalid phone number. Please enter a valid Safaricom number (e.g., 0712345678).")
+        return
 
     print(f"Phone number received from {chat_id}: {phone}")  # Debugging
 
@@ -68,16 +74,16 @@ def handle_phone(message, amount):
         response_data = response.json()
 
         if response.status_code == 200 and response_data.get("success"):
-            bot.send_message(chat_id, "Mpesa Popup sent successfully! Please enter your PIN to complete the transaction.")
+            bot.send_message(chat_id, "✅ Mpesa Popup sent successfully! Please enter your PIN to complete the transaction.")
         else:
-            bot.send_message(chat_id, f"Error: {response_data.get('message', 'Failed to initiate STK Push.')}")
+            bot.send_message(chat_id, f"❌ Error: {response_data.get('message', 'Failed to initiate STK Push.')}")
     
     except Exception as e:
-        bot.send_message(chat_id, f"Error: {str(e)}")
+        bot.send_message(chat_id, f"⚠️ Error: {str(e)}")
 
 # ✅ Start bot using polling
 if __name__ == '__main__':
-    print("Bot is running using polling...")
-    bot.remove_webhook()  # 🚀 Remove webhook first
-    bot.polling(none_stop=True)  # Then start polling
-
+    print("🚀 Bot is running using polling...")
+    bot.remove_webhook()  # ✅ Remove webhook first
+    time.sleep(1)  # ✅ Give time for Telegram to unregister webhook
+    bot.polling(none_stop=True)  # ✅ Start polling
