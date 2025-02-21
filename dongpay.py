@@ -2,11 +2,7 @@ import os
 import telebot
 import requests
 import logging
-from flask import Flask
 from dataclasses import dataclass
-
-# Initialize Flask app (for health check)
-app = Flask(__name__)
 
 # Load API credentials from environment variables
 API_TOKEN = os.getenv('API_TOKEN')
@@ -83,7 +79,7 @@ MESSAGES = {
         "sw": "🚧 Inakuja hivi karibuni!"
     },
     "unrecognized_input": {
-        "en": "❌ Unrecognized input. Please follow the instructions.",
+        "en": "❌ Unrecognized input. Please follow the instructions. type /help",
         "sw": "❌ Ingizo halitambuliki. Tafadhali fuata maagizo."
     }
 }
@@ -105,6 +101,21 @@ def start(message):
     chat_id = message.chat.id
     user_state[chat_id] = UserState(state=WAITING_FOR_AMOUNT, metadata={"name": message.from_user.first_name, "language": "en"})
     bot.send_message(chat_id, get_message(chat_id, "welcome"))
+
+# ✅ /help command
+@bot.message_handler(commands=['help'])
+def help(message):
+    help_text = """
+    Welcome to DongaBet Deposit Bot! Here's how to use me:
+
+    /start - Begin the deposit process.
+    /help - Show this help message.
+    /cancel - Cancel the current operation.
+    /language - Set your preferred language.
+
+    For any issues, contact support @DongbetBot.
+    """
+    bot.send_message(message.chat.id, help_text)
 
 # ✅ Handle deposit amount
 @bot.message_handler(func=lambda message: message.text.isdigit())
@@ -134,26 +145,6 @@ def handle_phone(message, amount):
     bot.send_message(chat_id, get_message(chat_id, "confirm_transaction", amount, phone))
     bot.register_next_step_handler(message, confirm_transaction, amount, phone)
 
-
-# ✅ /help command
-@bot.message_handler(commands=['help'])
-def help(message):
-    help_text = """
-    Welcome to DongaBet Deposit Bot! Here's how to use me:
-
-    /start - Begin the deposit process.
-    /help - Show this help message.
-    /cancel - Cancel the current operation.
-    /status - Check the bot's status.
-    /language - Set your preferred language.
-    /feedback - Share your feedback or report issues.
-    /settings - Customize your preferences.
-    /notify - Enable or disable notifications.
-
-    For any issues, contact support @DongbetBot.
-    """
-    bot.send_message(message.chat.id, help_text)
-
 # ✅ Confirm transaction
 def confirm_transaction(message, amount, phone):
     chat_id = message.chat.id
@@ -170,6 +161,13 @@ def confirm_transaction(message, amount, phone):
             bot.send_message(chat_id, get_message(chat_id, "transaction_failed", str(e)))
     else:
         bot.send_message(chat_id, get_message(chat_id, "operation_cancelled"))
+
+# ✅ /cancel command
+@bot.message_handler(commands=['cancel'])
+def cancel(message):
+    chat_id = message.chat.id
+    user_state.pop(chat_id, None)
+    bot.send_message(chat_id, get_message(chat_id, "operation_cancelled"))
 
 # ✅ /language command
 @bot.message_handler(commands=['language'])
@@ -191,26 +189,12 @@ def save_language(message):
     else:
         bot.send_message(chat_id, get_message(chat_id, "coming_soon"))
 
-# ✅ /cancel command
-@bot.message_handler(commands=['cancel'])
-def cancel(message):
-    chat_id = message.chat.id
-    user_state.pop(chat_id, None)
-    bot.send_message(chat_id, get_message(chat_id, "operation_cancelled"))
-
 # ✅ Handle unrecognized input
 @bot.message_handler(func=lambda message: True)
 def handle_unknown(message):
     chat_id = message.chat.id
     bot.send_message(chat_id, get_message(chat_id, "unrecognized_input"))
 
-
-# Health check route (fixes 404 on root)
-@app.route('/')
-def home():
-    return "Your Telegram bot is running!", 200
-
-# Run Flask app
+# Start the bot using polling
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=10000)
-
+    bot.infinity_polling()
