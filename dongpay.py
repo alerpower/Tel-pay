@@ -204,3 +204,13 @@ def handle_unknown(message):
     chat_id = message.chat.id
     bot.send_message(chat_id, get_message(chat_id, "unrecognized_input"))
 
+
+# Health check route (fixes 404 on root)
+@app.route('/')
+def home():
+    return "Your Telegram bot is running!", 200
+
+# Run Flask app
+if __name__ == '__main__':
+    app.run(host="0.0.0.0", port=10000)
+
